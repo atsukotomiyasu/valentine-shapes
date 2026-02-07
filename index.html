@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Valentine Shapes Card Maker</title>
+<style>
+body{font-family:Arial;margin:0;display:flex;height:100vh}
+#tools{width:220px;padding:10px;border-right:1px solid #ccc;overflow:auto}
+#tools h3{margin:6px 0}
+.shapeBtn{width:100%;height:36px;margin:4px 0;display:flex;align-items:center;gap:8px}
+.shapeIcon{width:28px;height:28px}
+.colorBtn{width:100%;margin:4px 0;height:30px;color:#000}
+#canvasWrap{flex:1;display:flex;justify-content:center;align-items:center;background:#eee}
+canvas{background:white;box-shadow:0 0 5px rgba(0,0,0,.3);touch-action:none}
+.small{font-size:12px}
+</style>
+</head>
+<body>
+<div id="tools">
+<h3>Shapes</h3>
+<button class="shapeBtn" onclick="addShape('heart')"><svg class="shapeIcon" viewBox="0 0 100 100"><path d="M50 80 C90 50 80 15 50 35 C20 15 10 50 50 80" fill="black"/></svg>heart</button>
+<button class="shapeBtn" onclick="addShape('circle')"><svg class="shapeIcon" viewBox="0 0 100 100"><circle cx="50" cy="50" r="35" fill="black"/></svg>circle</button>
+<button class="shapeBtn" onclick="addShape('square')"><svg class="shapeIcon" viewBox="0 0 100 100"><rect x="20" y="20" width="60" height="60" fill="black"/></svg>square</button>
+<button class="shapeBtn" onclick="addShape('triangle')"><svg class="shapeIcon" viewBox="0 0 100 100"><polygon points="50,15 15,85 85,85" fill="black"/></svg>triangle</button>
+<button class="shapeBtn" onclick="addShape('star')"><svg class="shapeIcon" viewBox="0 0 100 100"><polygon points="50,10 60,40 90,40 65,58 75,90 50,70 25,90 35,58 10,40 40,40" fill="black"/></svg>star</button>
+<button class="shapeBtn" onclick="addShape('rectangle')"><svg class="shapeIcon" viewBox="0 0 100 100"><rect x="10" y="30" width="80" height="40" fill="black"/></svg>rectangle</button>
+<button class="shapeBtn" onclick="addShape('diamond')"><svg class="shapeIcon" viewBox="0 0 100 100"><polygon points="50,10 10,50 50,90 90,50" fill="black"/></svg>diamond</button>
+
+<h3>Colors</h3>
+<button class="colorBtn" style="background:red" onclick="setColor('red')">red</button>
+<button class="colorBtn" style="background:pink" onclick="setColor('pink')">pink</button>
+<button class="colorBtn" style="background:purple;color:white" onclick="setColor('purple')">purple</button>
+<button class="colorBtn" style="background:yellow" onclick="setColor('yellow')">yellow</button>
+<button class="colorBtn" style="background:blue;color:white" onclick="setColor('blue')">blue</button>
+<button class="colorBtn" style="background:green;color:white" onclick="setColor('green')">green</button>
+
+<h3>メッセージ</h3>
+<button onclick="addText('Happy Valentine\'s Day!')">Happy Valentine's Day!</button>
+<button onclick="addText('I like you!')">I like you!</button>
+<button onclick="addText('From ')">From ___</button>
+
+<h3>えらんだかたち</h3>
+<button onclick="rotateSel(-15)">まわす ◀</button>
+<button onclick="rotateSel(15)">まわす ▶</button>
+<button onclick="scaleSel(1.2)">大きく</button>
+<button onclick="scaleSel(0.8)">小さく</button>
+<button onclick="deleteSel()">けす</button>
+
+<h3>さいご</h3>
+<button onclick="resetAll()">リセット</button>
+<button onclick="downloadPNG()">ダウンロード</button>
+<p class="small">かたちをタップしてえらぼう</p>
+</div>
+
+<div id="canvasWrap">
+<canvas id="c" width="600" height="800"></canvas>
+</div>
+
+<script>
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+let items=[];
+let currentColor='red';
+let drag=null,selected=null,ox=0,oy=0;
+
+function addShape(type){items.push({type,x:300,y:400,size:60,rot:0,color:currentColor});draw();}
+function addText(t){items.push({type:'text',text:t,x:300,y:700,size:24,rot:0,color:'black'});draw();}
+function setColor(c){currentColor=c;if(selected)selected.color=c;draw();}
+
+function rotateSel(a){if(selected){selected.rot+=a*Math.PI/180;draw();}}
+function scaleSel(s){if(selected){selected.size*=s;draw();}}
+function deleteSel(){if(!selected)return;items=items.filter(i=>i!==selected);selected=null;draw();}
+function resetAll(){items=[];selected=null;draw();}
+
+function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);
+items.forEach(i=>{ctx.save();ctx.translate(i.x,i.y);ctx.rotate(i.rot);ctx.fillStyle=i.color||'black';
+if(i.type==='circle'){ctx.beginPath();ctx.arc(0,0,i.size,0,Math.PI*2);ctx.fill();}
+else if(i.type==='square'){ctx.fillRect(-i.size,-i.size,i.size*2,i.size*2);}
+else if(i.type==='rectangle'){ctx.fillRect(-i.size*1.2,-i.size,i.size*2.4,i.size*2);}
+else if(i.type==='triangle'){ctx.beginPath();ctx.moveTo(0,-i.size);ctx.lineTo(-i.size,i.size);ctx.lineTo(i.size,i.size);ctx.closePath();ctx.fill();}
+else if(i.type==='diamond'){ctx.beginPath();ctx.moveTo(0,-i.size);ctx.lineTo(-i.size,0);ctx.lineTo(0,i.size);ctx.lineTo(i.size,0);ctx.closePath();ctx.fill();}
+else if(i.type==='star'){drawStar(0,0,i.size,i.color);}
+else if(i.type==='heart'){drawHeart(0,0,i.size,i.color);}
+else if(i.type==='text'){ctx.font=i.size+'px Arial';ctx.fillText(i.text,-80,0);}ctx.restore();});
+
+}
+
+function drawStar(x,y,r,c){ctx.fillStyle=c;ctx.beginPath();for(let i=0;i<5;i++){let a=i*2*Math.PI/5-Math.PI/2;ctx.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r);a+=Math.PI/5;ctx.lineTo(x+Math.cos(a)*r/2,y+Math.sin(a)*r/2);}ctx.closePath();ctx.fill();}
+function drawHeart(x,y,s,c){ctx.save();ctx.scale(1,1.3);ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(0,s/2);ctx.bezierCurveTo(s*1.2,-s/2,s*2,s/3,0,s*1.5);ctx.bezierCurveTo(-s*2,s/3,-s*1.2,-s/2,0,s/2);ctx.fill();ctx.restore();}
+
+canvas.addEventListener('pointerdown',e=>{const r=canvas.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;selected=null;for(let i=items.length-1;i>=0;i--){let it=items[i];if(Math.hypot(mx-it.x,my-it.y)<80){drag=it;selected=it;ox=mx-it.x;oy=my-it.y;break;}}});
+canvas.addEventListener('pointermove',e=>{if(!drag)return;const r=canvas.getBoundingClientRect();drag.x=e.clientX-r.left-ox;drag.y=e.clientY-r.top-oy;draw();});
+canvas.addEventListener('pointerup',()=>drag=null);
+
+function downloadPNG(){const a=document.createElement('a');a.download='valentine_card.png';a.href=canvas.toDataURL();a.click();}
+
+draw();
+</script>
+</body>
+</html>
